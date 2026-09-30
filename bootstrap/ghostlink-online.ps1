@@ -13,6 +13,12 @@ function Step([string]$Text) {
     Write-Host ">>> $Text" -ForegroundColor Cyan
 }
 
+function Test-Admin {
+    $id = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $p = New-Object Security.Principal.WindowsPrincipal($id)
+    return $p.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+}
+
 function Ensure-BinPath {
     $bin = Join-Path $env:LOCALAPPDATA "GHOSTLINK\bin"
     New-Item -ItemType Directory -Force $bin | Out-Null
@@ -58,6 +64,13 @@ if /I not "%~1"=="GHOSTLINK" (
   echo Usage: DOWNLOAD GHOSTLINK
   exit /b 1
 )
+
+net session >nul 2>&1
+if not "%errorlevel%"=="0" (
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Start-Process -FilePath '%~f0' -ArgumentList 'GHOSTLINK' -Verb RunAs"
+  exit /b
+)
+
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%LOCALAPPDATA%\GHOSTLINK\online\ghostlink-online.ps1" -RequestedName GHOSTLINK
 exit /b %ERRORLEVEL%
 '@
@@ -164,12 +177,23 @@ try {
         throw "Verified GHOSTLINK package is missing its installer."
     }
 
-    Step "Requesting Administrator permission for installation"
-    $args = "-NoProfile -ExecutionPolicy Bypass -File `"$installer`" -RequestedName GHOSTLINK"
-    $p = Start-Process powershell.exe -Verb RunAs -ArgumentList $args -PassThru -Wait
+    Step "Preparing Administrator installation"
 
-    if ($p.ExitCode -ne 0) {
-        throw "GHOSTLINK installer exited with code $($p.ExitCode)."
+    # The permanent DOWNLOAD.cmd wrapper elevates before this script starts.
+    # Keeping the actual installer in this same console makes every installer
+    # message/error visible instead of losing it inside a second UAC process.
+    if (-not (Test-Admin)) {
+        throw "GHOSTLINK online engine is not elevated. Run DOWNLOAD GHOSTLINK again and approve the Windows UAC prompt."
+    }
+
+    Write-Host "Administrator context => READY" -ForegroundColor Green
+    Write-Host ""
+
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $installer -RequestedName GHOSTLINK
+    $installerRc = $LASTEXITCODE
+
+    if ($installerRc -ne 0) {
+        throw "GHOSTLINK installer exited with code $installerRc. The detailed installer output is shown above."
     }
 
     # The packaged installer writes a local repair wrapper. Restore the
