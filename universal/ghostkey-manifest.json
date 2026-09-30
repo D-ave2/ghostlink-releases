@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "channel": "stable",
+  "product": "GHOSTLINK Universal Bridge",
+  "windows_x64": {
+    "version": "1.0.0",
+    "url": "https://raw.githubusercontent.com/D-ave2/ghostlink-releases/main/universal/payloads/GHOSTLINK_UNIVERSAL_BRIDGE_WINDOWS_X64.zip",
+    "sha256": "91bfc3db9d72190596a968b53f0a7fc7b78c8a2d4f67f8f02084954be7970945",
+    "min_powershell_major": 5,
+    "headset": "JBL-800 / GHOSTLINK",
+    "headset_mac": "90:7E:96:53:AA:C4"
+  }
+}
