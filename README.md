@@ -1,4 +1,4 @@
-﻿# GHOSTLINK Releases
+# GHOSTLINK Releases
 
 Official public distribution home for GHOSTLINK // INFINITY.
 
